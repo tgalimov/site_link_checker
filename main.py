@@ -1,16 +1,9 @@
 import time
 import requests
+
 from urllib.parse import urlparse, urljoin
 from bs4 import BeautifulSoup
-import colorama
 
-# init the colorama module
-colorama.init()
-
-GREEN = colorama.Fore.GREEN
-GRAY = colorama.Fore.LIGHTBLACK_EX
-RESET = colorama.Fore.RESET
-YELLOW = colorama.Fore.YELLOW
 
 # initialize the set of links (unique links)
 internal_urls = set()
@@ -71,26 +64,38 @@ def get_all_website_links(url):
 
 
 def recursive_search(link, url_set=[]):
-    for url in get_all_website_links(link):
+    bad_links = 0
+    all_links = get_all_website_links(link)
+    for url in all_links:
         try:
             with open(output, "a") as f:
-                f.write(link + " | " + str(requests.get(url).status_code) + " | " + url + "\n")
+                response = requests.get(url).status_code
+                f.write(link + " | " + str(response) + " | " + url + "\n")
+            if response != 200:
+                bad_links += 1
             if url in url_set \
-                    or site not in url \
+                    or link not in url \
                     or ".pdf" in url\
                     or "https:/t.me/" in url:
                 continue
-            time.sleep(0.1)
+            time.sleep(0.2)
             url_set.append(url)
             recursive_search(url, url_set)
-        except Exception:
+        except Exception as e:
             with open(output, "a") as f:
                 f.write(link + " | " + "error" + " | " + url + "\n")
+    if len(all_links) != 0:
+        percentage_available_links = (1 - bad_links / len(all_links)) * 100
+    else:
+        percentage_available_links = 0
+    return url_set, percentage_available_links
 
-    return url_set
 
+#
+# def do_test():
+#     with open(input_list) as f:
+#         url_list = f.read().splitlines()
+#     for site in url_list:
+#         site_links = recursive_search(site)
+#         print(site + str(len(site_links)))
 
-with open(input_list) as f:
-    url_list = f.read().splitlines()
-for site in url_list:
-    print(len(recursive_search(site)))
