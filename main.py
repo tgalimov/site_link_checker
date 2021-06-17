@@ -35,7 +35,10 @@ def get_all_website_links(url):
     soup = BeautifulSoup(requests.get(url).content, "html.parser")
     for a_tag in soup.findAll("a"):
         href = a_tag.attrs.get("href")
-        if href == "" or href is None:
+        if href == "" \
+                or href is None \
+                or "mailto://" in href \
+                or "https://t.me/" in href:
             # href empty tag
             continue
         # join the URL if it's relative (not absolute link)
@@ -44,22 +47,16 @@ def get_all_website_links(url):
         # remove URL GET parameters, URL fragments, etc.
         href = parsed_href.scheme + "://" + parsed_href.netloc + parsed_href.path
         if not is_valid(href):
-            # not a valid URL
             continue
         if href in internal_urls:
-            # already in the set
             continue
         if domain_name not in href:
-            # external link
             if href not in external_urls:
-                # print(f"{GRAY}[!] External link: {href}{RESET}")
                 external_urls.add(href)
             continue
-        # print(f"{GREEN}[*] Internal link: {href}{RESET}")
         urls.add(href)
         internal_urls.add(href)
-        # with open("links.txt", "w") as f:
-        #     f.write(str(urls))
+
     return urls
 
 
@@ -68,10 +65,10 @@ def recursive_search(link, url_set=[]):
     all_links = get_all_website_links(link)
     for url in all_links:
         try:
-            with open(output, "a") as f:
-                response = requests.get(url).status_code
-                f.write(link + " | " + str(response) + " | " + url + "\n")
+            response = requests.get(url).status_code
             if response != 200:
+                with open(output, "a") as f:
+                    f.write(link + " | " + str(response) + " | " + url + "\n")
                 bad_links += 1
             if url in url_set \
                     or link not in url \
@@ -89,13 +86,4 @@ def recursive_search(link, url_set=[]):
     else:
         percentage_available_links = 0
     return url_set, percentage_available_links
-
-
-#
-# def do_test():
-#     with open(input_list) as f:
-#         url_list = f.read().splitlines()
-#     for site in url_list:
-#         site_links = recursive_search(site)
-#         print(site + str(len(site_links)))
 

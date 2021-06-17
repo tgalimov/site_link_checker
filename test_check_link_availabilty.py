@@ -22,4 +22,4 @@ site_url_list = [
 @pytest.mark.parametrize("site, expected_percent", site_url_list)
 def test_site_links_availability(site, expected_percent):
     check_site_links = recursive_search(site)
-    assert check_site_links[1] == expected_percent
+    assert check_site_links[1] == 100
